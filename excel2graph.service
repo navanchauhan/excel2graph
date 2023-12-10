@@ -1,0 +1,17 @@
+[Unit]
+Description=Gunicorn instance to serve application
+After=network.target
+
+[Service]
+User=graphexcel
+Group=graphexcel
+WorkingDirectory=/home/graphexcel/excel2graph
+Environment="/home/graphexcel/.cache/pypoetry/virtualenvs/excel2graph-NTDFhpxJ-py3.10/bin"
+ExecStart=/home/graphexcel/.cache/pypoetry/virtualenvs/excel2graph-NTDFhpxJ-py3.10/bin/gunicorn --workers 3 --bind 0.0.0.0:8080 app:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
