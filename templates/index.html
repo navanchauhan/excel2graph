@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Excel2Graph</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://bootswatch.com/5/morph/bootstrap.min.css" type="text/css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.css"/>
+<script src="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.js"></script>
+</head>
+<body>
+    <div class="container">
+    <h1>Excel2Graph</h1>
+    <p>Instructions:</p>
+    <ol>
+        <li>Paste Excel data into the text area below</li>
+        <li>Select the correct columns</li>
+        <li>Click "Load Data from Columns"</li>
+        <li>Fill in the rest of the form</li>
+        <li>Click "Generate Plot"</li>
+    </ol>
+<form action="/process_data" method="post" onsubmit="prepareSubmission">
+    <textarea id="excelData" placeholder="Paste Excel data here" class="form-control mb-3"></textarea>
+    <div class="mb-3 row">
+        <div class="col-md-4">
+    <label for="xColumn" class="form-label">X Data Column</label>
+    <select id="xColumn" class="form-control"></select>
+        </div>
+        <div class="col-md-4">
+    <label for="yColumn" class="form-label">Y Data Column</label>
+    <select id="yColumn" class="form-control"></select>
+        </div>
+    <div class="col-md-4">
+        <label for="stdDevColumn" class="form-label">Standard Deviation Column</label>
+    <select id="stdDevColumn" class="form-control">
+        <option value="">None</option>
+    </select>
+    </div>
+    </div>
+        <input type="hidden" name="xData" id="xData">
+    <input type="hidden" name="yData" id="yData">
+    <input type="hidden" name="stdDevData" id="stdDevData">
+    <button type="button" onclick="prepareSubmission()" class="btn btn-outline-primary">Load Data from Columns</button>
+
+    <div class="row mb-3 mt-3">
+        <label for="xTitle" class="form-label">X-Axis Title</label>
+        <input type="text" name="xTitle" id="xTitle" class="form-control">
+    </div>
+
+    <div class="row mb-3">
+        <label for="yTitle" class="form-label">Y-Axis Title</label>
+        <input type="text" name="yTitle" id="yTitle" class="form-control">
+    </div>
+
+    <div class="row mb-3">
+    <label for="plotTitle">Plot Title</label>
+    <input type="text" name="plotTitle" id="plotTitle" class="form-control">
+    </div>
+
+    <div class="row mb-3">
+        <label for="dataSeriesTitle">Data Series Title</label>
+        <input type="text" name="dataSeriesTitle" id="dataSeriesTitle" class="form-control">
+    </div>
+
+    <div id="constantLinesContainer">
+    </div>
+
+    <button type="button" class="btn btn-outline-primary mb-3" onclick="addConstantLine()">Add Constant Line</button>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="calcTrendline" name="calcTrendline" checked="">
+            <label class="form-check-label" for="calcTrendline">Calculate Trendline</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="colorPickerDP" class="form-label">Datapoint Color</label>
+            <input name="colorPickerDP" class="form-control" id="colorPickerDP" value="#ff0000" data-coloris>
+        </div>
+        <div class="col-md-4">
+            <label for="colorPickerPlotBackground" class="form-label">Plot Background Color</label>
+            <input name="colorPickerPlotBackground" class="form-control" id="colorPickerPlotBackground" value="#ffffff" data-coloris>
+        </div>
+        <div class="col-md-4">
+            <label for="colorPickerTrendline" class="form-label">Trendline Color</label>
+            <input name="colorPickerTrendline" class="form-control" id="colorPickerTrendline" value="#00ff00" data-coloris>
+            </div>
+    </div>
+    <input type="submit" value="Generate Plot">
+</form>
+<div id="tableContainer"></div>
+
+<script type="text/javascript">
+    // add change handler for textarea and execute processData function
+    document.getElementById('excelData').addEventListener('change', processData);
+
+
+    function prepareSubmission() {
+    const data = document.getElementById('excelData').value;
+    const rows = data.split('\n').map(row => row.split('\t'));
+
+    // Assuming first row contains headers
+    const headers = rows.shift();
+    populateColumnSelectors(headers);
+
+    // Prepare data for submission
+    const xIndex = document.getElementById('xColumn').value;
+    const yIndex = document.getElementById('yColumn').value;
+    const stdDevIndex = document.getElementById('stdDevColumn').value;
+
+    const xData = rows.map(row => row[xIndex]);
+    const yData = rows.map(row => row[yIndex]);
+    const stdDevData = stdDevIndex ? rows.map(row => row[stdDevIndex]) : [];
+
+    document.getElementById('xData').value = JSON.stringify(xData);
+    document.getElementById('yData').value = JSON.stringify(yData);
+    document.getElementById('stdDevData').value = JSON.stringify(stdDevData);
+
+    // Optionally, create and display table for review before submission
+    createTable(rows, headers);
+}
+
+
+    function processData() {
+    const data = document.getElementById('excelData').value;
+    const rows = data.split('\n').map(row => row.split('\t'));
+
+    // Assuming first row contains headers
+    const headers = rows.shift();
+    populateColumnSelectors(headers);
+
+    // Create and display table
+    createTable(rows, headers);
+}
+
+function populateColumnSelectors(headers) {
+    const xColumnSelect = document.getElementById('xColumn');
+    const yColumnSelect = document.getElementById('yColumn');
+    const stdDevSelect = document.getElementById('stdDevColumn');
+
+    headers.forEach((header, index) => {
+        let option = new Option(header, index);
+        xColumnSelect.add(option.cloneNode(true));
+        yColumnSelect.add(option.cloneNode(true));
+        stdDevSelect.add(option.cloneNode(true));
+    });
+}
+
+function createTable(data, headers) {
+    let table = '<table contenteditable="true" class="table">';
+    table += '<tr>' + headers.map(header => `<th scope="col">${header}</th>`).join('') + '</tr>';
+    data.forEach(row => {
+        table += '<tr>' + row.map(cell => `<td>${cell}</td>`).join('') + '</tr>';
+    });
+    table += '</table>';
+
+    document.getElementById('tableContainer').innerHTML = table;
+}
+
+    let constantLineCount = 0;
+
+    function addConstantLine() {
+    const container = document.getElementById('constantLinesContainer');
+    const line = document.createElement('div');
+    line.innerHTML = `
+    <div class="row mb-3">
+            <div class="col-md-4">
+        <label for="constantLine${constantLineCount}">Constant Line (y=)</label>
+        <input type="text" name="constantLine${constantLineCount}" id="constantLine${constantLineCount}" class="form-control">
+            </div>
+            <div class="col-md-4">
+            <label for="constantLineLabel${constantLineCount}">Line Title</label>
+        <input type="text" name="constantLineLabel${constantLineCount}" id="constantLineLabel${constantLineCount}" class="form-control">
+            </div>
+    </div>
+    `;
+    container.appendChild(line);
+    constantLineCount++;
+}
+
+
+// You should add more JavaScript for handling editing and validation
+</script>
+
+<style type="text/css">
+textarea {
+    width: 100%;
+    height: 150px;
+}
+select {
+    margin: 5px;
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+th, td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: left;
+}
+
+</style>
+    </div>
+
+</body>
+</html>
