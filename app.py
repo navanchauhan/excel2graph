@@ -9,30 +9,53 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
 
+import re
+
 font_path = 'times_new_roman.ttf'
 times_new_roman = font_manager.FontProperties(fname=font_path, style='normal')
 
-def plot_data(
-        x_data, y_data, std_dev_data=None,
-        title=None, x_label=None, y_label=None,
-        data_point_color='#ff0000', plot_background_color='#ffffff', constant_line=[],
-        enable_trendline=True, enable_grid=False,
-        data_series_title="Data Series",
-        trendline_color='#00ff00'
-        ):
+"""
+    fig = plot_data(x_data, y_data, std_dev_data, color_picker, title=plot_title,
+                    x_label=x_axis_label, y_label=y_axis_label,
+                    plot_background_color=plot_background_color,
+                    constant_line=constant_lines,
+                    enable_trendline=enable_trendline,
+                    trendline_color=color_picker_trendline)
+"""
+
+def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
+              title = "Plot", x_label = "X Axis", y_label = "Y Axis",
+              plot_background_color="#ffffff", constant_line=[],
+              enable_trendline=True, enable_grid=False,
+              trendline_color="#000000", x_axis_scale="linear", y_axis_scale="linear"):
     fig, ax = plt.subplots(dpi=300)
 
-    if (std_dev_data):
-        main_plot = ax.errorbar(x_data, y_data, yerr=std_dev_data, fmt='o', ecolor='black', capsize=5,  label=data_series_title, color=data_point_color)
-    else:
-        main_plot = ax.plot(x_data, y_data, 'o', color=data_point_color, label=data_series_title)
+    plots = []
 
-    handles = [main_plot]
+    for idx, _ in enumerate(x_data):
+        x = df[x_data[idx]].astype(float)
+        y = df[y_data[idx]].astype(float)
+        color = color_picker[idx]
+        data_series_title = labels[idx]
+        #print(df[x][0], df[y][0], color, data_series_title)
+        if (std_dev_data[idx] != None):
+            plot = ax.errorbar(x, y, yerr=df[std_dev_data[idx]].astype(float), fmt='o', ecolor='black', capsize=5, color=color, label=data_series_title)
+        else:
+            plot = ax.plot(x, y, 'o', color=color, label=data_series_title)
+
+        if (type(plot) == list):
+            plots.extend(plot)
+        else:
+            plots.append(plot)
+
+    handles = plots
 
     if enable_trendline:
-        z = np.polyfit(x_data, y_data, 2)
+        x = df[x_data[0]].astype(float)
+        y = df[y_data[0]].astype(float)
+        z = np.polyfit(x, y, 2)
         p = np.poly1d(z)
-        h, = ax.plot(x_data,p(x_data), linestyle="dashed", label="Trendline", color=trendline_color)
+        h, = ax.plot(x,p(x), linestyle="dashed", label="Trendline", color=trendline_color)
         handles.append(h)
 
     light_grey = 0.9
@@ -66,12 +89,21 @@ def plot_data(
     fig.patch.set_facecolor(plot_background_color)
     fig.tight_layout(pad=3.0)
     #ax.invert_xaxis()
-    #ax.set_xscale("log")
+    
+
+    ax.set_xscale(x_axis_scale)
+    ax.set_yscale(y_axis_scale)
 
     return fig
 
 
 app = Flask(__name__)
+
+def create_df_from_textarea(textarea):
+    rows = textarea.split('\n')
+    data = [row.split("\t") for row in rows]
+    df = pd.DataFrame(data[1:], columns=data[0])
+    return df
 
 @app.route('/')
 def index():
@@ -81,9 +113,11 @@ def index():
 @app.route('/process_data', methods=['POST'])
 def process_data():
     print(request.form)
-    x_data_json = request.form.get('xData', '[]')
-    y_data_json = request.form.get('yData', '[]')
-    std_dev_data_json = request.form.get('stdDevData', '[]')
+
+    textarea = request.form['excelData']
+    df = create_df_from_textarea(textarea)
+
+    print(df)
 
     constant_lines = []
     for x in range(0,10):
@@ -94,25 +128,93 @@ def process_data():
         except KeyError:
             break
 
-    x_data = json.loads(x_data_json)
-    print(x_data, x_data_json)
-    y_data = json.loads(y_data_json)
-    std_dev_data = json.loads(std_dev_data_json)
+    data_keys = f"{request.form.keys()}"
+    print(data_keys)
 
-    # Process data
-    x_data = [float(x) for x in x_data]
-    y_data = [float(y) for y in y_data]
-    std_dev_data = [float(std_dev) for std_dev in std_dev_data] if std_dev_data else []
+    xPattern = r'xColumn-\d+'
+    yPattern = r'yColumn-\d+'
+    stdDevPattern = r'stdDevColumn-\d+'
+    colorPickerPattern = r'colorPicker-\d+'
+    labelPattern = r'dataSeries-\d+'
+
+
+    # match in data_keys string
+    x_data_matches = re.findall(xPattern, data_keys)
+    y_data_matches = re.findall(yPattern, data_keys)
+    std_dev_data_matches = re.findall(stdDevPattern, data_keys)
+    color_picker_matches = re.findall(colorPickerPattern, data_keys)
+    label_matches = re.findall(labelPattern, data_keys)
+
+    print(x_data_matches, y_data_matches, std_dev_data_matches, color_picker_matches)
+
+    # Not sure if we need to sort these
+    #x_data_matches.sort()
+    #y_data_matches.sort()
+    #std_dev_data_matches.sort()
+
+    x_data = []
+
+    for x in x_data_matches:
+        val = request.form.get(x)
+        if val != '':
+            x_data.append(df.columns[int(val)])
+        else:
+            x_data.append(None)
+
+    y_data = []
+
+    for y in y_data_matches:
+        val = request.form.get(y)
+        if val != '':
+            y_data.append(df.columns[int(val)])
+        else:
+            y_data.append(None)
+
+    std_dev_data = []
+
+    for std_dev in std_dev_data_matches:
+        val = request.form.get(std_dev)
+        if val != '':
+            std_dev_data.append(df.columns[int(val)])
+        else:
+            std_dev_data.append(None)
+
+    color_picker = []
+
+    for color in color_picker_matches:
+        val = request.form.get(color)
+        if val != '':
+            color_picker.append(val)
+        else:
+            color_picker.append(None)
+
+    data_series_label = []
+
+    for label in label_matches:
+        val = request.form.get(label)
+        if val != '':
+            data_series_label.append(val)
+        else:
+            data_series_label.append("Data")
+
+
+    print(x_data)
+    print(y_data)
+    print(std_dev_data)
+    print(color_picker)
+    print(data_series_label)
+
+    
 
     x_axis_label = request.form.get('xTitle', 'X Axis')
     y_axis_label = request.form.get('yTitle', 'Y Axis')
     plot_title = request.form.get('plotTitle', 'Plot Title')
 
-    data_point_color = request.form.get('colorPickerDP', '#ff0000')
     plot_background_color = request.form.get('colorPickerPlotBackground', '#ffffff')
     color_picker_trendline = request.form.get('colorPickerTrendline', '#00ff00')
 
-    data_series_title = request.form.get('dataSeriesTitle', 'Data Series')
+    x_axis_scale = request.form.get('xAxisScale', 'linear')
+    y_axis_scale = request.form.get('yAxisScale', 'linear')
 
     calc_trendline = request.form.get('calcTrendline', 'off')
     if calc_trendline == 'on':
@@ -120,14 +222,14 @@ def process_data():
     else:
         enable_trendline = False
 
-    fig = plot_data(
-        x_data, y_data, std_dev_data=std_dev_data,
-        title=plot_title, x_label=x_axis_label, y_label=y_axis_label,
-        data_point_color=data_point_color, plot_background_color=plot_background_color,
-        constant_line=constant_lines, data_series_title=data_series_title,
-        enable_trendline=enable_trendline,
-        trendline_color=color_picker_trendline
-    )
+    fig = plot_data(x_data, y_data, std_dev_data, color_picker, data_series_label, df, title=plot_title,
+                    x_label=x_axis_label, y_label=y_axis_label,
+                    plot_background_color=plot_background_color,
+                    constant_line=constant_lines,
+                    enable_trendline=enable_trendline,
+                    trendline_color=color_picker_trendline,
+                    x_axis_scale=x_axis_scale,
+                    y_axis_scale=y_axis_scale)
 
     # Return plot as image
     from io import BytesIO

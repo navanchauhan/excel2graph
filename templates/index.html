@@ -20,36 +20,158 @@
         <li>Click "Generate Plot"</li>
     </ol>
 <form action="/process_data" method="post" onsubmit="prepareSubmission">
-    <textarea id="excelData" placeholder="Paste Excel data here" class="form-control mb-3"></textarea>
-    <div class="mb-3 row">
-        <div class="col-md-4">
-    <label for="xColumn" class="form-label">X Data Column</label>
-    <select id="xColumn" class="form-control"></select>
+    <textarea id="excelData" placeholder="Paste Excel data here" class="form-control mb-3" name="excelData"></textarea>
+    <button type="button" onclick="processData()" class="btn btn-outline-primary mb-3">Process Excel Data</button>
+    <div name="dataSeriesDiv" id="data-series-div">
+    <div class="row mt-3 mb-3">
+        <div class="col-md-2">
+            <label for="xColumn-1" class="form-label">X Data Column</label>
+            <select id="xColumn-1" class="form-control table-data" name="xColumn-1"></select>
         </div>
-        <div class="col-md-4">
-    <label for="yColumn" class="form-label">Y Data Column</label>
-    <select id="yColumn" class="form-control"></select>
+        <div class="col-md-2">
+            <label for="yColumn-1" class="form-label">Y Data Column</label>
+            <select id="yColumn-1" class="form-control table-data" name="yColumn-1"></select>
         </div>
-    <div class="col-md-4">
-        <label for="stdDevColumn" class="form-label">Standard Deviation Column</label>
-    <select id="stdDevColumn" class="form-control">
-        <option value="">None</option>
-    </select>
+        <div class="col-md-2">
+            <label for="stdDevColumn-1" class="form-label" >Error Bars</label>
+            <select id="stdDevColumn-1" class="form-control table-data" name="stdDevColumn-1">
+                <option value="">None</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="dataSeries-1" class="form-label">Data Series Name</label>
+            <input type="text" name="dataSeries-1" id="dataSeries-1" class="form-control" placeholder="Data">
+        </div>
+        <div class="col-md-2">
+            <label for="colorPicker-1" class="form-label">Datapoint Color</label>
+            <input name="colorPicker-1" class="form-control" id="colorPicker-1" name="colorPicker-1" value="#000000" data-coloris>
+        </div>
     </div>
     </div>
+    <button class="btn btn-outline-primary mb-4" type="button" onclick="addDataSeries()">Add Data Series</button>
+    <script type="text/javascript">
+        function addDataSeries() {
+            let dataSeriesCount = document.getElementById('data-series-div').childElementCount;
+            let dataSeriesDiv = document.getElementById('data-series-div');
+
+            let row = document.createElement('div');
+            row.classList.add('row');
+            row.classList.add('mb-3');
+            row.id = `dataSeriesRow-${dataSeriesCount + 1}`;
+
+            let col1 = document.createElement('div');
+            col1.classList.add('col-md-2');
+
+            let col2 = document.createElement('div');
+            col2.classList.add('col-md-2');
+
+            let col3 = document.createElement('div');
+            col3.classList.add('col-md-2');
+
+            let col4 = document.createElement('div');
+            col4.classList.add('col-md-2');
+
+            let col5 = document.createElement('div');
+            col5.classList.add('col-md-2');
+
+            let col6 = document.createElement('div');
+            col6.classList.add('col-md-2');
+
+            let xColumn = document.createElement('select');
+            xColumn.classList.add('form-control');
+            xColumn.classList.add('table-data');
+            xColumn.id = `xColumn-${dataSeriesCount + 1}`;
+            xColumn.name = `xColumn-${dataSeriesCount + 1}`;
+
+            let yColumn = document.createElement('select');
+            yColumn.classList.add('form-control');
+            yColumn.classList.add('table-data');
+            yColumn.id = `yColumn-${dataSeriesCount + 1}`;
+            yColumn.name = `yColumn-${dataSeriesCount + 1}`;
+
+            let stdDevColumn = document.createElement('select');
+            stdDevColumn.classList.add('form-control');
+            stdDevColumn.classList.add('table-data');
+            stdDevColumn.id = `stdDevColumn-${dataSeriesCount + 1}`;
+            stdDevColumn.name = `stdDevColumn-${dataSeriesCount + 1}`;
+            // Default to None
+            let stdDevOption = document.createElement('option');
+            stdDevOption.value = '';
+            stdDevOption.innerHTML = 'None';
+            stdDevColumn.appendChild(stdDevOption);
+
+            let dataSeries = document.createElement('input');
+            dataSeries.classList.add('form-control');
+            dataSeries.id = `dataSeries-${dataSeriesCount + 1}`;
+            dataSeries.name = `dataSeries-${dataSeriesCount + 1}`;
+            dataSeries.placeholder = 'Data';
+
+            let colorPicker = document.createElement('input');
+            colorPicker.classList.add('form-control');
+            colorPicker.id = `colorPicker-${dataSeriesCount + 1}`;
+            colorPicker.name = `colorPicker-${dataSeriesCount + 1}`;
+            colorPicker.value = '#000000';
+            colorPicker.setAttribute('data-coloris', '');
+
+            let removeButton = document.createElement('button');
+            removeButton.classList.add('btn');
+            removeButton.classList.add('btn-outline-danger');
+            removeButton.classList.add('mb-3');
+            removeButton.type = 'button';
+            removeButton.innerHTML = 'Remove Data Series';
+            removeButton.onclick = function() {
+                let row = document.getElementById(`dataSeriesRow-${dataSeriesCount + 1}`);
+                row.remove();
+            }
+
+
+            // If excel data is present, populate the column selectors
+            let headersDiv = document.getElementById('headersDiv');
+            if (headersDiv) {
+                let headers = JSON.parse(headersDiv.innerHTML);
+                headers.forEach((header, index) => {
+                    let option = new Option(header, index);
+                    xColumn.add(option.cloneNode(true));
+                    yColumn.add(option.cloneNode(true));
+                    stdDevColumn.add(option.cloneNode(true));
+                });
+            }
+
+            col1.appendChild(xColumn);
+            col2.appendChild(yColumn);
+            col3.appendChild(stdDevColumn);
+            col4.appendChild(dataSeries);
+            col5.appendChild(colorPicker);
+            col6.appendChild(removeButton);
+
+            row.appendChild(col1);
+            row.appendChild(col2);
+            row.appendChild(col3);
+            row.appendChild(col4);
+            row.appendChild(col5);
+            row.appendChild(col6);
+
+            dataSeriesDiv.appendChild(row);
+
+        }
+    </script>
         <input type="hidden" name="xData" id="xData">
     <input type="hidden" name="yData" id="yData">
     <input type="hidden" name="stdDevData" id="stdDevData">
-    <button type="button" onclick="prepareSubmission()" class="btn btn-outline-primary">Load Data from Columns</button>
+    <br><br>
+    <div>
+            <button type="button" onclick="prepareSubmission()" class="btn btn-outline-primary">Load Data from Columns</button>
+            <button type="button" class="btn btn-outline-warning">Reset Data Load</button>
+    </div>
 
     <div class="row mb-3 mt-3">
         <label for="xTitle" class="form-label">X-Axis Title</label>
-        <input type="text" name="xTitle" id="xTitle" class="form-control">
+        <input type="text" name="xTitle" id="xTitle" class="form-control" placeholder="X-Axis">
     </div>
 
     <div class="row mb-3">
         <label for="yTitle" class="form-label">Y-Axis Title</label>
-        <input type="text" name="yTitle" id="yTitle" class="form-control">
+        <input type="text" name="yTitle" id="yTitle" class="form-control" placeholder="Y-Axis">
     </div>
 
     <div class="row mb-3">
@@ -57,10 +179,6 @@
     <input type="text" name="plotTitle" id="plotTitle" class="form-control">
     </div>
 
-    <div class="row mb-3">
-        <label for="dataSeriesTitle">Data Series Title</label>
-        <input type="text" name="dataSeriesTitle" id="dataSeriesTitle" class="form-control">
-    </div>
 
     <div id="constantLinesContainer">
     </div>
@@ -78,17 +196,33 @@
 
     <div class="row mb-3">
         <div class="col-md-4">
-            <label for="colorPickerDP" class="form-label">Datapoint Color</label>
-            <input name="colorPickerDP" class="form-control" id="colorPickerDP" value="#ff0000" data-coloris>
-        </div>
-        <div class="col-md-4">
             <label for="colorPickerPlotBackground" class="form-label">Plot Background Color</label>
             <input name="colorPickerPlotBackground" class="form-control" id="colorPickerPlotBackground" value="#ffffff" data-coloris>
         </div>
         <div class="col-md-4">
             <label for="colorPickerTrendline" class="form-label">Trendline Color</label>
-            <input name="colorPickerTrendline" class="form-control" id="colorPickerTrendline" value="#00ff00" data-coloris>
+            <input name="colorPickerTrendline" class="form-control" id="colorPickerTrendline" value="#000000" data-coloris>
             </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="xAxisScale" class="form-label">X-Axis Scale</label>
+            <select name="xAxisScale" id="xAxisScale" class="form-control">
+                <option value="linear" default>Linear</option>
+                <option value="log">Logarithmic</option>
+                <option value="symlog">Symmetrical Logarithmic</option>
+                <option value="logit">Logit</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="yAxisScale" class="form-label">Y-Axis Scale</label>
+            <select name="yAxisScale" id="yAxisScale" class="form-control">
+                <option value="linear" default>Linear</option>
+                <option value="log">Logarithmic</option>
+                <option value="symlog">Symmetrical Logarithmic</option>
+                <option value="logit">Logit</option>
+            </select>
+        </div>
     </div>
     <input type="submit" value="Generate Plot">
 </form>
@@ -96,7 +230,7 @@
 
 <script type="text/javascript">
     // add change handler for textarea and execute processData function
-    document.getElementById('excelData').addEventListener('change', processData);
+    //document.getElementById('excelData').addEventListener('change', processData);
 
 
     function prepareSubmission() {
@@ -135,6 +269,13 @@
 
     // Create and display table
     createTable(rows, headers);
+
+    // Create hidden div with headers data
+    const headersDiv = document.createElement('div');
+    headersDiv.id = 'headersDiv';
+    headersDiv.classList.add('d-none');
+    headersDiv.innerHTML = JSON.stringify(headers);
+    document.body.appendChild(headersDiv);
 }
 
 function populateColumnSelectors(headers) {
@@ -142,12 +283,27 @@ function populateColumnSelectors(headers) {
     const yColumnSelect = document.getElementById('yColumn');
     const stdDevSelect = document.getElementById('stdDevColumn');
 
+    /*
     headers.forEach((header, index) => {
         let option = new Option(header, index);
         xColumnSelect.add(option.cloneNode(true));
         yColumnSelect.add(option.cloneNode(true));
         stdDevSelect.add(option.cloneNode(true));
     });
+    */
+
+    // Fill all data series
+
+    var allSelect = document.getElementsByClassName('table-data');
+    console.log(allSelect)
+
+    for (var i = 0; i < allSelect.length; i++) {
+        for (var j = 0; j < headers.length; j++) {
+            let option = new Option(headers[j], j);
+            allSelect[i].add(option.cloneNode(true));
+        }
+    }
+
 }
 
 function createTable(data, headers) {
@@ -175,6 +331,9 @@ function createTable(data, headers) {
             <div class="col-md-4">
             <label for="constantLineLabel${constantLineCount}">Line Title</label>
         <input type="text" name="constantLineLabel${constantLineCount}" id="constantLineLabel${constantLineCount}" class="form-control">
+            </div>
+            <div class="col-md-4">
+            <button type="button" class="btn btn-outline-danger mb-3 mt-4" onclick="this.parentElement.parentElement.remove()">Remove Constant Line</button>
             </div>
     </div>
     `;
