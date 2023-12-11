@@ -14,8 +14,7 @@
     <p>Instructions:</p>
     <ol>
         <li>Paste Excel data into the text area below</li>
-        <li>Select the correct columns</li>
-        <li>Click "Load Data from Columns"</li>
+        <li>Click Process Excel Data</li>
         <li>Fill in the rest of the form</li>
         <li>Click "Generate Plot"</li>
     </ol>
@@ -158,11 +157,11 @@
         <input type="hidden" name="xData" id="xData">
     <input type="hidden" name="yData" id="yData">
     <input type="hidden" name="stdDevData" id="stdDevData">
-    <br><br>
+    <!--<br><br>
     <div>
             <button type="button" onclick="prepareSubmission()" class="btn btn-outline-primary">Load Data from Columns</button>
             <button type="button" class="btn btn-outline-warning">Reset Data Load</button>
-    </div>
+    </div>-->
 
     <div class="row mb-3 mt-3">
         <label for="xTitle" class="form-label">X-Axis Title</label>
@@ -186,24 +185,22 @@
     <button type="button" class="btn btn-outline-primary mb-3" onclick="addConstantLine()">Add Constant Line</button>
 
     <div class="row mb-3">
-        <div class="col-md-4">
+        <div class="col">
             <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="calcTrendline" name="calcTrendline" checked="">
-            <label class="form-check-label" for="calcTrendline">Calculate Trendline</label>
+            <label class="form-check-label" for="calcTrendline">Calculate Trendline (Note: This calculates the trendline for the first data series only)</label>
             </div>
         </div>
     </div>
 
-    <div class="row mb-3">
-        <div class="col-md-4">
+        <div class="mb-3 row">
             <label for="colorPickerPlotBackground" class="form-label">Plot Background Color</label>
             <input name="colorPickerPlotBackground" class="form-control" id="colorPickerPlotBackground" value="#ffffff" data-coloris>
         </div>
-        <div class="col-md-4">
+        <div class="mb-3 row">
             <label for="colorPickerTrendline" class="form-label">Trendline Color</label>
             <input name="colorPickerTrendline" class="form-control" id="colorPickerTrendline" value="#000000" data-coloris>
             </div>
-    </div>
     <div class="row mb-3">
         <div class="col-md-4">
             <label for="xAxisScale" class="form-label">X-Axis Scale</label>
@@ -224,9 +221,9 @@
             </select>
         </div>
     </div>
-    <input type="submit" value="Generate Plot">
+    <input type="submit" value="Generate Plot" class="btn btn-primary mb-3">
 </form>
-<div id="tableContainer"></div>
+<div id="tableContainer" class="mt-3 mb-3"></div>
 
 <script type="text/javascript">
     // add change handler for textarea and execute processData function
