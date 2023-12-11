@@ -37,7 +37,6 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         y = df[y_data[idx]].astype(float)
         color = color_picker[idx]
         data_series_title = labels[idx]
-        #print(df[x][0], df[y][0], color, data_series_title)
         if (std_dev_data[idx] != None):
             plot = ax.errorbar(x, y, yerr=df[std_dev_data[idx]].astype(float), fmt='o', ecolor='black', capsize=5, color=color, label=data_series_title)
         else:
@@ -119,23 +118,15 @@ def process_data():
 
     print(df)
 
-    constant_lines = []
-    for x in range(0,10):
-        try:
-            y = float(request.form['constantLine' + str(x)])
-            name = request.form['constantLineLabel' + str(x)]
-            constant_lines.append((y, name))
-        except KeyError:
-            break
-
     data_keys = f"{request.form.keys()}"
-    print(data_keys)
 
     xPattern = r'xColumn-\d+'
     yPattern = r'yColumn-\d+'
     stdDevPattern = r'stdDevColumn-\d+'
     colorPickerPattern = r'colorPicker-\d+'
     labelPattern = r'dataSeries-\d+'
+    constantLinePattern = r'constantLine\d+'
+    constantLineLabelPattern = r'constantLineLabel\d+'
 
 
     # match in data_keys string
@@ -144,13 +135,8 @@ def process_data():
     std_dev_data_matches = re.findall(stdDevPattern, data_keys)
     color_picker_matches = re.findall(colorPickerPattern, data_keys)
     label_matches = re.findall(labelPattern, data_keys)
-
-    print(x_data_matches, y_data_matches, std_dev_data_matches, color_picker_matches)
-
-    # Not sure if we need to sort these
-    #x_data_matches.sort()
-    #y_data_matches.sort()
-    #std_dev_data_matches.sort()
+    constant_line_matches = re.findall(constantLinePattern, data_keys)
+    constant_line_label_matches = re.findall(constantLineLabelPattern, data_keys)
 
     x_data = []
 
@@ -198,11 +184,15 @@ def process_data():
             data_series_label.append("Data")
 
 
-    print(x_data)
-    print(y_data)
-    print(std_dev_data)
-    print(color_picker)
-    print(data_series_label)
+    constant_lines = []
+
+    for idx, val in enumerate(constant_line_matches):
+        val = request.form.get(val)
+        if val != '':
+            label = request.form.get(constant_line_label_matches[idx]) or "Constant Line"
+            val = float(val)
+            constant_lines.append((val, label))
+
 
     
 
