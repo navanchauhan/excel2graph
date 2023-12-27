@@ -124,7 +124,7 @@ async def create_plot(request: PlotDataRequest, data: Request):
 
     # if request.std_dev_data exists, add to df
     if len(request.std_dev_data) > 0:
-        df["STD_DEV"] = request.std_dev_data[0]
+        df["STD_DEV"] = request.std_dev_data
 
     x_data = ["X"]
     y_data = ["Y"]
