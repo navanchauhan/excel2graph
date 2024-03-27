@@ -127,8 +127,9 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
     labels = [h.get_label() for h in handles]
     ax.legend(handles, labels, loc='best', prop=times_new_roman)
 
-    fig.patch.set_facecolor(plot_background_color)
-    fig.tight_layout(pad=3.0)
+    if not special_mode:
+        fig.patch.set_facecolor(plot_background_color)
+        fig.tight_layout(pad=3.0)
     #ax.invert_xaxis()
     
 
@@ -136,16 +137,11 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
     ax.set_yscale(y_axis_scale)
 
     if special_mode:
-        #ax.grid(linestyle="dashed", dashes=(5,3))
-
         # Hide title, x label, y label
         ax.legend().set_visible(False)
         ax.set_title("")
         ax.set_xlabel("")
         ax.set_ylabel("")
-
-        # revert fig.tight_layout
-        fig.tight_layout(pad=0.0)
 
         ax.spines[['right', 'top']].set_visible(False)
         ax.tick_params(axis='x', length=0)
