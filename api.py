@@ -148,8 +148,13 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         ax.tick_params(axis='y', length=0)
         arial_font = FontProperties(fname='./arial.ttf')
         mpl.font_manager.fontManager.addfont('./arial.ttf')
-        with mpl.rc_context({"font.family": arial_font.get_name(), "font.size": 10}):
+        with mpl.rc_context({"font.family": arial_font.get_name(), "font.size": 9}):
             ax.legend(handles, labels, loc='best')
+
+            # set axis labels to Arial:
+            ax.set_xlabel(x_label, fontproperties=arial_font)
+            ax.set_ylabel(y_label, fontproperties=arial_font)
+
             return fig
 
     return fig
