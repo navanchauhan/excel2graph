@@ -47,7 +47,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
               enable_trendline=True, enable_grid=False,
               trendline_color="#000000", x_axis_scale="linear", y_axis_scale="linear", trendline_equation=None, special_mode=False):
     fig, ax = plt.subplots(dpi=300)
-    special_mode_color = (38,56,97)	
+    special_mode_color = (38/255,56/255,97/255)	
 
     plots = []
 
