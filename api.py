@@ -47,6 +47,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
               enable_trendline=True, enable_grid=False,
               trendline_color="#000000", x_axis_scale="linear", y_axis_scale="linear", trendline_equation=None, special_mode=False):
     fig, ax = plt.subplots(dpi=300)
+    special_mode_color = (38,56,97)	
 
     plots = []
 
@@ -57,9 +58,9 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         data_series_title = labels[idx]
         if special_mode:
             if (std_dev_data[idx] != None):
-                plot = ax.errorbar(x, y, yerr=df[std_dev_data[idx]].astype(float), fmt='o', ecolor='navy', capsize=5, color="navy", label=data_series_title)
+                plot = ax.errorbar(x, y, yerr=df[std_dev_data[idx]].astype(float), fmt='o', ecolor=special_mode_color, capsize=5, color=special_mode_color, label=data_series_title)
             else:
-                plot = ax.plot(x, y, 'o', color="navy", label=data_series_title)
+                plot = ax.plot(x, y, 'o', color=special_mode_color, label=data_series_title)
         else:
             if (std_dev_data[idx] != None):
                 plot = ax.errorbar(x, y, yerr=df[std_dev_data[idx]].astype(float), fmt='o', ecolor='black', capsize=5, color=color, label=data_series_title)
@@ -78,7 +79,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
 
     if enable_trendline:
         if special_mode:
-            trendline_color = "navy"
+            trendline_color = special_mode_color
         if trendline_equation != None:
             try:
                 x = symbols('x')
