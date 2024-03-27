@@ -71,7 +71,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
                 p = sympify(trendline_equation)
                 x_range = np.linspace(df[x_data[0]].astype(float).min(), df[x_data[0]].astype(float).max(), 100)
                 y_range = [p.subs(x, i) for i in x_range]
-                h, = ax.plot(x_range, y_range, linestyle="dashed", label="Trendline", color=trendline_color)
+                h, = ax.plot(x_range, y_range, linestyle="dotted", label="Trendline", color=trendline_color)
                 handles.append(h)
             except:
                 print("Invalid Equation")
@@ -80,7 +80,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
             y = df[y_data[0]].astype(float)
             z = np.polyfit(x, y, 2)
             p = np.poly1d(z)
-            h, = ax.plot(x,p(x), linestyle="dashed", label="Trendline", color=trendline_color)
+            h, = ax.plot(x,p(x), linestyle="dotted", label="Trendline", color=trendline_color)
             handles.append(h)
 
     light_grey = 0.9
@@ -91,7 +91,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         idx += 1
         grey_shade = light_grey - (light_grey - dar_grey) * (idx / len(constant_line))
         color = (grey_shade, grey_shade, grey_shade)
-        h = ax.axhline(y=val, linestyle='--', color=color, label=name)
+        h = ax.axhline(y=val, linestyle='dashed', dashes=(idx,idx)  , color=color, label=name)
         handles.append(h)
 
     ax.grid(True,linestyle=(0,(1,5))) # enable_grid)
