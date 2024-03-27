@@ -8,6 +8,8 @@ import pandas as pd
 
 from pydantic import BaseModel, Field
 
+from sympy import symbols, sympify
+
 font_path = 'times_new_roman.ttf'
 times_new_roman = font_manager.FontProperties(fname=font_path, style='normal')
 
@@ -29,6 +31,8 @@ class PlotDataRequest(BaseModel):
     x_axis_scale: str = Field("linear", title="X Axis Scale", description="Scale of the X axis")
     y_axis_scale: str = Field("linear", title="Y Axis Scale", description="Scale of the Y axis")
 
+    trendline_equation: str = Field(None, title="Trendline Equation", description="Manually specify the equation for the trendline")
+
     constant_line_vals: list[float] = Field([], title="Constant Line Values", description="List of values for the constant line")
     constant_line_name: list[str] = Field([], title="Constant Line Names", description="List of names for the constant line")
 
@@ -38,7 +42,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
               title = "Plot", x_label = "X Axis", y_label = "Y Axis",
               plot_background_color="#ffffff", constant_line=[],
               enable_trendline=True, enable_grid=False,
-              trendline_color="#000000", x_axis_scale="linear", y_axis_scale="linear"):
+              trendline_color="#000000", x_axis_scale="linear", y_axis_scale="linear", trendline_equation=None):
     fig, ax = plt.subplots(dpi=300)
 
     plots = []
@@ -61,12 +65,23 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
     handles = plots
 
     if enable_trendline:
-        x = df[x_data[0]].astype(float)
-        y = df[y_data[0]].astype(float)
-        z = np.polyfit(x, y, 2)
-        p = np.poly1d(z)
-        h, = ax.plot(x,p(x), linestyle="dashed", label="Trendline", color=trendline_color)
-        handles.append(h)
+        if trendline_equation != None:
+            try:
+                x = symbols('x')
+                p = sympify(trendline_equation)
+                x_range = np.linspace(df[x_data[0]].astype(float).min(), df[x_data[0]].astype(float).max(), 100)
+                y_range = [p.subs(x, i) for i in x_range]
+                h, = ax.plot(x_range, y_range, linestyle="dashed", label="Trendline", color=trendline_color)
+                handles.append(h)
+            except:
+                print("Invalid Equation")
+        else:   
+            x = df[x_data[0]].astype(float)
+            y = df[y_data[0]].astype(float)
+            z = np.polyfit(x, y, 2)
+            p = np.poly1d(z)
+            h, = ax.plot(x,p(x), linestyle="dashed", label="Trendline", color=trendline_color)
+            handles.append(h)
 
     light_grey = 0.9
     dar_grey = 0.4
@@ -140,7 +155,7 @@ async def create_plot(request: PlotDataRequest, data: Request):
                     title=request.title, x_label=request.x_label, y_label=request.y_label,
                     enable_trendline=request.enable_trendline, enable_grid=request.enable_grid,
                     constant_line=constant_line,
-                    x_axis_scale=request.x_axis_scale, y_axis_scale=request.y_axis_scale)
+                    x_axis_scale=request.x_axis_scale, y_axis_scale=request.y_axis_scale, enable_trendline=request.enable_trendline)
 
     buf = BytesIO()
     fig.savefig(buf, format="png")
