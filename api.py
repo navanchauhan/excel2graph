@@ -132,7 +132,14 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
     ax.set_yscale(y_axis_scale)
 
     if special_mode:
-        ax.grid(linestyle="dashed", dashes=(5,3))
+        #ax.grid(linestyle="dashed", dashes=(5,3))
+
+        # Hide title, x label, y label
+        ax.legend().set_visible(False)
+        ax.set_title("")
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+
         ax.spines[['right', 'top']].set_visible(False)
         ax.tick_params(axis='x', length=0)
         ax.tick_params(axis='y', length=0)
