@@ -64,6 +64,9 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
 
     handles = plots
 
+    if trendline_equation == "":
+        trendline_equation = None
+
     if enable_trendline:
         if trendline_equation != None:
             try:
