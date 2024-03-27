@@ -155,7 +155,7 @@ async def create_plot(request: PlotDataRequest, data: Request):
                     title=request.title, x_label=request.x_label, y_label=request.y_label,
                     enable_trendline=request.enable_trendline, enable_grid=request.enable_grid,
                     constant_line=constant_line,
-                    x_axis_scale=request.x_axis_scale, y_axis_scale=request.y_axis_scale, enable_trendline=request.enable_trendline)
+                    x_axis_scale=request.x_axis_scale, y_axis_scale=request.y_axis_scale, trendline_equation=request.trendline_equation)
 
     buf = BytesIO()
     fig.savefig(buf, format="png")
