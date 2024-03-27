@@ -151,9 +151,9 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         with mpl.rc_context({"font.family": arial_font.get_name(), "font.size": 9}):
             ax.legend(handles, labels, loc='best')
 
-            # set axis labels to Arial:
-            ax.set_xlabel(x_label, fontproperties=arial_font)
-            ax.set_ylabel(y_label, fontproperties=arial_font)
+            # set axis tick labels to Arial:
+            for label in (ax.get_xticklabels() + ax.get_yticklabels()):
+                label.set_fontproperties(arial_font)
 
             return fig
 
