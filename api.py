@@ -77,6 +77,8 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         trendline_equation = None
 
     if enable_trendline:
+        if special_mode:
+            trendline_color = "blue"
         if trendline_equation != None:
             try:
                 x = symbols('x')
@@ -94,6 +96,8 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
             p = np.poly1d(z)
             h, = ax.plot(x,p(x), linestyle="dotted", label="Trendline", color=trendline_color)
             handles.append(h)
+
+
 
     light_grey = 0.9
     dar_grey = 0.4
@@ -139,6 +143,9 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         ax.set_title("")
         ax.set_xlabel("")
         ax.set_ylabel("")
+
+        # revert fig.tight_layout
+        fig.tight_layout(pad=0.0)
 
         ax.spines[['right', 'top']].set_visible(False)
         ax.tick_params(axis='x', length=0)
