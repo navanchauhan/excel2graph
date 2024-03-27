@@ -91,7 +91,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         idx += 1
         grey_shade = light_grey - (light_grey - dar_grey) * (idx / len(constant_line))
         color = (grey_shade, grey_shade, grey_shade)
-        h = ax.axhline(y=val, linestyle='dashed', dashes=(idx+2,idx+2)  , color=color, label=name)
+        h = ax.axhline(y=val, linestyle='dashed', dashes=(idx,idx*2)  , color=color, label=name)
         handles.append(h)
 
     ax.grid(True,linestyle=(0,(1,5))) # enable_grid)
