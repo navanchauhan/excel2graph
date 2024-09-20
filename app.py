@@ -137,6 +137,10 @@ def create_df_from_textarea(textarea):
 def index():
     return render_template('index.html')
 
+@app.route("/patent")
+def patent():
+    return render_template('patent.html')
+
 # POST for process_data
 @app.route('/process_data', methods=['POST'])
 def process_data():

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Data Plotter with Pyodide</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+    <link href="https://bootswatch.com/5/morph/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Plotter for Patent</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <textarea id="dataInput" class="form-control" rows="10" placeholder="Paste Excel data here"></textarea>
+                </div>
+                <button onclick="loadData()" class="btn btn-primary mb-3">Load Data</button>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="xSelect" class="form-label">Select X-axis:</label>
+                    <select id="xSelect" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label for="ySelect" class="form-label">Select Y-axis:</label>
+                    <select id="ySelect" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label for="errorSelect" class="form-label">Select Error column:</label>
+                    <select id="errorSelect" class="form-select"></select>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-3 mb-3">
+                <label for="plotTitle" class="form-label">Plot Title:</label>
+                <input type="text" id="plotTitle" class="form-control" placeholder="Enter plot title">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="xAxisLabel" class="form-label">X-axis Label:</label>
+                <input type="text" id="xAxisLabel" class="form-control" placeholder="Enter X-axis label">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="yAxisLabel" class="form-label">Y-axis Label:</label>
+                <input type="text" id="yAxisLabel" class="form-control" placeholder="Enter Y-axis label">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="dataSeriesLabel" class="form-label">Data Series Label:</label>
+                <input type="text" id="dataSeriesLabel" class="form-control" placeholder="Enter data series label">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <button onclick="plotScatterPlot()" class="btn btn-success me-2">Plot Scatter Plot</button>
+                <button onclick="plotBarPlot()" class="btn btn-info">Plot Bar Plot</button>
+            </div>
+        </div>
+        <div id="plotCanvas" class="mt-4"></div>
+    </div>
+
+    <script>
+        // Load Pyodide and initialize Python environment
+        async function initPyodide() {
+            const pyodide = await loadPyodide();
+            await pyodide.loadPackage('micropip');
+            await pyodide.runPythonAsync(`
+                import micropip
+                await micropip.install('matplotlib')
+                await micropip.install('pandas')
+            `);
+            window.pyodide = pyodide;
+        }
+
+        // Initialize Pyodide on page load
+        window.onload = async () => {
+            await initPyodide();
+        }
+
+        // Function to populate dropdowns based on CSV headers
+        function populateDropdowns(headers) {
+            const xSelect = document.getElementById('xSelect');
+            const ySelect = document.getElementById('ySelect');
+            const errorSelect = document.getElementById('errorSelect');
+
+            // Clear previous options
+            xSelect.innerHTML = '';
+            ySelect.innerHTML = '';
+            errorSelect.innerHTML = '';
+
+            headers.forEach(header => {
+                const option = document.createElement('option');
+                option.value = header;
+                option.textContent = header;
+                xSelect.appendChild(option.cloneNode(true));
+                ySelect.appendChild(option.cloneNode(true));
+                errorSelect.appendChild(option.cloneNode(true));
+            });
+        }
+
+        // Function to load and parse CSV data
+        function loadData() {
+            const data = document.getElementById('dataInput').value;
+            const rows = data.split('\n');
+            const headers = rows[0].split('\t');
+            populateDropdowns(headers);
+            return data;
+        }
+
+        async function plotScatterPlot() {
+            const data = document.getElementById('dataInput').value;
+            const xColumn = document.getElementById('xSelect').value;
+            const yColumn = document.getElementById('ySelect').value;
+            const errorColumn = document.getElementById('errorSelect').value;
+            const xLabel = document.getElementById('xAxisLabel').value;
+            const yLabel = document.getElementById('yAxisLabel').value;
+            const dataSeriesLabel = document.getElementById('dataSeriesLabel').value;
+            const plotTitle = document.getElementById('plotTitle').value;
+
+            try {
+                // Send the data to Pyodide for processing
+                await pyodide.runPythonAsync(`
+import pandas as pd
+from io import StringIO
+import matplotlib.pyplot as plt
+import base64
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+csv_data = '''${data}'''
+df = pd.read_csv(StringIO(csv_data), delimiter='\t')
+df = df.groupby('${xColumn}').agg({ '${yColumn}': 'mean', '${errorColumn}': 'std' }).reset_index()
+x = df['${xColumn}']
+y = df['${yColumn}']
+yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
+# Sort data by x to ensure correct plotting order
+df = df.sort_values('${xColumn}')
+x = df['${xColumn}']
+y = df['${yColumn}']
+yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
+fig = Figure(figsize=(10, 6))
+ax = fig.add_subplot(111)
+# Plot data with error bars
+ax.errorbar(x, y, yerr=yerr, fmt='o-', capsize=5, capthick=2, color='grey', ecolor='black', elinewidth=2, markerfacecolor='black', markersize=10, label='${dataSeriesLabel}')
+# Add a line connecting the data points
+#ax.plot(x, y, color='black', linestyle='-', marker='o')
+ax.set_title('${plotTitle}')
+ax.set_xlabel('${xLabel}')
+ax.set_ylabel('${yLabel}')
+ax.grid(False)
+ax.legend()
+# Save plot to PNG
+canvas = FigureCanvasAgg(fig)
+import io
+buf = io.BytesIO()
+canvas.print_png(buf)
+buf.seek(0)
+img_data = base64.b64encode(buf.getvalue()).decode('utf-8')`);
+
+                // Retrieve and display the plot
+                const imgData = await pyodide.globals.get('img_data');
+                document.getElementById('plotCanvas').innerHTML = `<img src="data:image/png;base64,${imgData}" />`;
+            } catch (error) {
+                console.error('Error in plotScatterPlot:', error);
+                alert('An error occurred while plotting the data. Please check the console for details.');
+            }
+        }
+
+
+        async function plotBarPlot() {
+            const data = document.getElementById('dataInput').value;
+            const xColumn = document.getElementById('xSelect').value;
+            const yColumn = document.getElementById('ySelect').value;
+            const errorColumn = document.getElementById('errorSelect').value;
+            const xLabel = document.getElementById('xAxisLabel').value;
+            const yLabel = document.getElementById('yAxisLabel').value;
+            const dataSeriesLabel = document.getElementById('dataSeriesLabel').value;
+            const plotTitle = document.getElementById('plotTitle').value;
+
+            try {
+                // Send the data to Pyodide for processing
+                await pyodide.runPythonAsync(`
+import pandas as pd
+from io import StringIO
+import matplotlib.pyplot as plt
+import base64
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+csv_data = '''${data}'''
+df = pd.read_csv(StringIO(csv_data), delimiter='\t')
+df = df.groupby('${xColumn}').agg({ '${yColumn}': 'mean', '${errorColumn}': 'std' }).reset_index()
+x = df['${xColumn}']
+y = df['${yColumn}']
+yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
+# Sort data by x to ensure correct plotting order
+df = df.sort_values('${xColumn}')
+x = df['${xColumn}'].astype(str)
+y = df['${yColumn}']
+yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
+fig = Figure(figsize=(10, 6))
+ax = fig.add_subplot(111)
+# Plot data with error bars
+bar_positions = range(len(x))
+ax.bar(x, y, yerr=yerr,capsize=10, color='gray', alpha=0.5, error_kw={'elinewidth': 2, 'capsize':5,'capthick':2}, label='${dataSeriesLabel}')
+ax.set_xticks(bar_positions)
+ax.set_xticklabels(x)
+ax.set_title('${plotTitle}')
+ax.set_xlabel('${xLabel}')
+ax.set_ylabel('${yLabel}')
+ax.grid(False)
+ax.legend()
+ax.tick_params(axis='x', rotation=0)
+fig.tight_layout()
+# Save plot to PNG
+canvas = FigureCanvasAgg(fig)
+import io
+buf = io.BytesIO()
+canvas.print_png(buf)
+buf.seek(0)
+img_data = base64.b64encode(buf.getvalue()).decode('utf-8')`);
+
+                // Retrieve and display the plot
+                const imgData = await pyodide.globals.get('img_data');
+                document.getElementById('plotCanvas').innerHTML = `<img src="data:image/png;base64,${imgData}" />`;
+            } catch (error) {
+                console.error('Error in plotScatterPlot:', error);
+                alert('An error occurred while plotting the data. Please check the console for details.');
+            }
+        }
+    </script>
+    </script>
+</body>
+</html>
+
