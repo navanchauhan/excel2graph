@@ -29,7 +29,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
               title = "Plot", x_label = "X Axis", y_label = "Y Axis",
               plot_background_color="#ffffff", constant_line=[],
               enable_trendline=True, enable_grid=False,
-              trendline_color="#000000", x_axis_scale="linear", y_axis_scale="linear", trendline_equation=None):
+              trendline_color="#000000", x_axis_scale="linear", y_axis_scale="linear", trendline_equation=None, chart_type="default"):
     fig, ax = plt.subplots(dpi=300)
 
     plots = []
@@ -39,10 +39,21 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         y = df[y_data[idx]].astype(float)
         color = color_picker[idx]
         data_series_title = labels[idx]
-        if (std_dev_data[idx] != None):
-            plot = ax.errorbar(x, y, yerr=df[std_dev_data[idx]].astype(float), fmt='o', ecolor='black', capsize=5, color=color, label=data_series_title)
+        print("Chart type:")
+        print(chart_type)
+        if chart_type == "patent_bar":
+            plot = ax.bar(x, y, yerr=df[std_dev_data[idx]].astype(float) if std_dev_data[idx] else None,
+                                      capsize=10, color='gray', alpha=0.5, width=0.5,  # Adjust the width here
+                                      error_kw={'elinewidth': 2, 'capsize': 5, 'capthick': 2})
+        elif chart_type == "patent_scatter":
+            plot = ax.errorbar(x, y, yerr=df[std_dev_data[idx]].astype(float) if std_dev_data[idx] else None,
+                                       fmt='o-', capsize=5, capthick=2, color='grey', ecolor='black',
+                                       elinewidth=2, markerfacecolor='black', markersize=10)
         else:
-            plot = ax.plot(x, y, 'o', color=color, label=data_series_title)
+            if (std_dev_data[idx] != None):
+                plot = ax.errorbar(x, y, yerr=df[std_dev_data[idx]].astype(float), fmt='o', ecolor='black', capsize=5, color=color, label=data_series_title)
+            else:
+                plot = ax.plot(x, y, 'o', color=color, label=data_series_title)
 
         if (type(plot) == list):
             plots.extend(plot)
@@ -82,7 +93,10 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         h = ax.axhline(y=val, linestyle='--', color=color, label=name)
         handles.append(h)
 
-    ax.grid(True,linestyle=(0,(1,5))) # enable_grid)
+    if chart_type == "default":
+        ax.grid(True,linestyle=(0,(1,5))) # enable_grid)
+    else:
+        ax.grid(False)
 
     ax.set_facecolor(plot_background_color)
     ax.set_xlabel(x_label, fontproperties=times_new_roman)
@@ -100,12 +114,13 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
     ax.legend(handles, labels, loc='best', prop=times_new_roman)
 
     fig.patch.set_facecolor(plot_background_color)
-    fig.tight_layout(pad=3.0)
-    #ax.invert_xaxis()
-    
 
-    ax.set_xscale(x_axis_scale)
-    ax.set_yscale(y_axis_scale)
+    if chart_type != "patent_bar":
+        fig.tight_layout(pad=3.0)
+        ax.set_xscale(x_axis_scale)
+        ax.set_yscale(y_axis_scale)
+    else:
+        fig.tight_layout()
 
     return fig
 
@@ -208,7 +223,7 @@ def process_data():
             constant_lines.append((val, label))
 
 
-    
+
 
     x_axis_label = request.form.get('xTitle', 'X Axis')
     y_axis_label = request.form.get('yTitle', 'Y Axis')
@@ -230,6 +245,8 @@ def process_data():
     if trendline_equation == "":
         trendline_equation = None
 
+    chart_type = request.form.get('chartType', 'default')
+
     fig = plot_data(x_data, y_data, std_dev_data, color_picker, data_series_label, df, title=plot_title,
                     x_label=x_axis_label, y_label=y_axis_label,
                     plot_background_color=plot_background_color,
@@ -238,7 +255,7 @@ def process_data():
                     trendline_color=color_picker_trendline,
                     x_axis_scale=x_axis_scale,
                     y_axis_scale=y_axis_scale,
-                    trendline_equation=trendline_equation)
+                    trendline_equation=trendline_equation, chart_type=chart_type)
 
     # Return plot as image
     from io import BytesIO
