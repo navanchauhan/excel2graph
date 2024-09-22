@@ -129,7 +129,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 csv_data = '''${data}'''
 df = pd.read_csv(StringIO(csv_data), delimiter='\t')
-df = df.groupby('${xColumn}').agg({ '${yColumn}': 'mean', '${errorColumn}': 'std' }).reset_index()
+df = df.groupby('${xColumn}').agg({ '${yColumn}': 'mean', '${errorColumn}': 'mean' }).reset_index()
 x = df['${xColumn}']
 y = df['${yColumn}']
 yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
@@ -141,7 +141,7 @@ yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
 fig = Figure(figsize=(10, 6))
 ax = fig.add_subplot(111)
 # Plot data with error bars
-ax.errorbar(x, y, yerr=yerr, fmt='o-', capsize=5, capthick=2, color='grey', ecolor='black', elinewidth=2, markerfacecolor='black', markersize=10, label='${dataSeriesLabel}')
+ax.errorbar(x, y, yerr=yerr, fmt='o', capsize=5, capthick=2, color='grey', ecolor='black', elinewidth=2, markerfacecolor='black', markersize=10, label='${dataSeriesLabel}')
 # Add a line connecting the data points
 #ax.plot(x, y, color='black', linestyle='-', marker='o')
 ax.set_title('${plotTitle}')
@@ -188,7 +188,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 csv_data = '''${data}'''
 df = pd.read_csv(StringIO(csv_data), delimiter='\t')
-df = df.groupby('${xColumn}').agg({ '${yColumn}': 'mean', '${errorColumn}': 'std' }).reset_index()
+df = df.groupby('${xColumn}').agg({ '${yColumn}': 'mean', '${errorColumn}': 'mean' }).reset_index()
 x = df['${xColumn}']
 y = df['${yColumn}']
 yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
@@ -231,4 +231,3 @@ img_data = base64.b64encode(buf.getvalue()).decode('utf-8')`);
     </script>
 </body>
 </html>
-
