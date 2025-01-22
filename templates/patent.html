@@ -1,233 +1,409 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excel Data Plotter with Pyodide</title>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-    <link href="https://bootswatch.com/5/morph/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Excel Data Plotter with Pyodide</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+  <link href="https://bootswatch.com/5/morph/bootstrap.min.css" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="mb-4">Plotter for Patent</h1>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <textarea id="dataInput" class="form-control" rows="10" placeholder="Paste Excel data here"></textarea>
-                </div>
-                <button onclick="loadData()" class="btn btn-primary mb-3">Load Data</button>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="xSelect" class="form-label">Select X-axis:</label>
-                    <select id="xSelect" class="form-select"></select>
-                </div>
-                <div class="mb-3">
-                    <label for="ySelect" class="form-label">Select Y-axis:</label>
-                    <select id="ySelect" class="form-select"></select>
-                </div>
-                <div class="mb-3">
-                    <label for="errorSelect" class="form-label">Select Error column:</label>
-                    <select id="errorSelect" class="form-select"></select>
-                </div>
-            </div>
+  <div class="container mt-5">
+    <h1 class="mb-4">Plotter for Patent</h1>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="mb-3">
+          <textarea
+            id="dataInput"
+            class="form-control"
+            rows="10"
+            placeholder="Paste Excel data (tab-delimited) here">
+          </textarea>
         </div>
-        <div class="row mt-3">
-            <div class="col-md-3 mb-3">
-                <label for="plotTitle" class="form-label">Plot Title:</label>
-                <input type="text" id="plotTitle" class="form-control" placeholder="Enter plot title">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label for="xAxisLabel" class="form-label">X-axis Label:</label>
-                <input type="text" id="xAxisLabel" class="form-control" placeholder="Enter X-axis label">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label for="yAxisLabel" class="form-label">Y-axis Label:</label>
-                <input type="text" id="yAxisLabel" class="form-control" placeholder="Enter Y-axis label">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label for="dataSeriesLabel" class="form-label">Data Series Label:</label>
-                <input type="text" id="dataSeriesLabel" class="form-control" placeholder="Enter data series label">
-            </div>
+        <button onclick="loadData()" class="btn btn-primary mb-3">Load Data</button>
+      </div>
+
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label for="xSelect" class="form-label">Select X-axis:</label>
+          <select id="xSelect" class="form-select"></select>
         </div>
-        <div class="row mt-3">
-            <div class="col-md-6">
-                <button onclick="plotScatterPlot()" class="btn btn-success me-2">Plot Scatter Plot</button>
-                <button onclick="plotBarPlot()" class="btn btn-info">Plot Bar Plot</button>
-            </div>
+        <div class="mb-3">
+          <label for="ySelect" class="form-label">Select Y-axis:</label>
+          <select id="ySelect" class="form-select"></select>
         </div>
-        <div id="plotCanvas" class="mt-4"></div>
+        <div class="mb-3">
+          <label for="errorSelect" class="form-label">Select Error column:</label>
+          <select id="errorSelect" class="form-select"></select>
+        </div>
+      </div>
     </div>
 
-    <script>
-        // Load Pyodide and initialize Python environment
-        async function initPyodide() {
-            const pyodide = await loadPyodide();
-            await pyodide.loadPackage('micropip');
-            await pyodide.runPythonAsync(`
-                import micropip
-                await micropip.install('matplotlib')
-                await micropip.install('pandas')
-            `);
-            window.pyodide = pyodide;
+    <!-- Plot configuration -->
+    <div class="row mt-3">
+      <div class="col-md-3 mb-3">
+        <label for="plotTitle" class="form-label">Plot Title:</label>
+        <input type="text" id="plotTitle" class="form-control" placeholder="Enter plot title"/>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label for="xAxisLabel" class="form-label">X-axis Label:</label>
+        <input type="text" id="xAxisLabel" class="form-control" placeholder="Enter X-axis label"/>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label for="yAxisLabel" class="form-label">Y-axis Label:</label>
+        <input type="text" id="yAxisLabel" class="form-control" placeholder="Enter Y-axis label"/>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label for="dataSeriesLabel" class="form-label">Data Series Label:</label>
+        <input type="text" id="dataSeriesLabel" class="form-control" placeholder="Enter data series label"/>
+      </div>
+    </div>
+
+    <!-- Trendline options -->
+    <div class="row mt-3">
+      <div class="col-md-3">
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" value="" id="addTrendline" />
+          <label class="form-check-label" for="addTrendline">Add Trendline</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="mb-3">
+          <label for="trendlineSelect" class="form-label">Trendline Type:</label>
+          <select id="trendlineSelect" class="form-select">
+            <option value="none" selected>None</option>
+            <option value="linear">Linear</option>
+            <option value="exponential">Exponential</option>
+            <option value="logarithmic">Logarithmic</option>
+            <option value="polynomial">Polynomial</option>
+            <option value="power">Power</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="mb-3" id="polynomialOrderContainer" style="display: none;">
+          <label for="polynomialOrder" class="form-label">Polynomial Order:</label>
+          <input type="number" id="polynomialOrder" class="form-control" value="2" min="1"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <button onclick="plotScatterPlot()" class="btn btn-success me-2">Plot Scatter Plot</button>
+        <button onclick="plotBarPlot()" class="btn btn-info">Plot Bar Plot</button>
+      </div>
+    </div>
+
+    <!-- Plot output -->
+    <div id="plotCanvas" class="mt-4"></div>
+  </div>
+
+  <script>
+    // Initialize Pyodide on page load
+    window.onload = async () => {
+      await initPyodide();
+      // Event listener to show/hide polynomial order
+      document.getElementById('trendlineSelect').addEventListener('change', function () {
+        const trendlineType = this.value;
+        const orderContainer = document.getElementById('polynomialOrderContainer');
+        if (trendlineType === 'polynomial') {
+          orderContainer.style.display = 'block';
+        } else {
+          orderContainer.style.display = 'none';
         }
+      });
+    };
 
-        // Initialize Pyodide on page load
-        window.onload = async () => {
-            await initPyodide();
-        }
+    // Load Pyodide and initialize Python environment
+    async function initPyodide() {
+      const pyodide = await loadPyodide();
+      await pyodide.loadPackage('micropip');
+      await pyodide.runPythonAsync(`
+        import micropip
+        # Install the needed packages
+        await micropip.install('matplotlib')
+        await micropip.install('pandas')
+        await micropip.install('numpy')
+      `);
+      window.pyodide = pyodide;
+    }
 
-        // Function to populate dropdowns based on CSV headers
-        function populateDropdowns(headers) {
-            const xSelect = document.getElementById('xSelect');
-            const ySelect = document.getElementById('ySelect');
-            const errorSelect = document.getElementById('errorSelect');
+    // Function to populate dropdowns based on header row
+    function populateDropdowns(headers) {
+      const xSelect = document.getElementById('xSelect');
+      const ySelect = document.getElementById('ySelect');
+      const errorSelect = document.getElementById('errorSelect');
 
-            // Clear previous options
-            xSelect.innerHTML = '';
-            ySelect.innerHTML = '';
-            errorSelect.innerHTML = '';
+      // Clear previous options
+      xSelect.innerHTML = '';
+      ySelect.innerHTML = '';
+      errorSelect.innerHTML = '';
 
-            headers.forEach(header => {
-                const option = document.createElement('option');
-                option.value = header;
-                option.textContent = header;
-                xSelect.appendChild(option.cloneNode(true));
-                ySelect.appendChild(option.cloneNode(true));
-                errorSelect.appendChild(option.cloneNode(true));
-            });
-        }
+      headers.forEach(header => {
+        const option = document.createElement('option');
+        option.value = header;
+        option.textContent = header;
+        xSelect.appendChild(option.cloneNode(true));
+        ySelect.appendChild(option.cloneNode(true));
+        errorSelect.appendChild(option.cloneNode(true));
+      });
+    }
 
-        // Function to load and parse CSV data
-        function loadData() {
-            const data = document.getElementById('dataInput').value;
-            const rows = data.split('\n');
-            const headers = rows[0].split('\t');
-            populateDropdowns(headers);
-            return data;
-        }
+    // Function to load data from textarea, parse headers
+    function loadData() {
+      const data = document.getElementById('dataInput').value;
+      const rows = data.split('\n');
+      const headers = rows[0].split('\t');
+      populateDropdowns(headers);
+      return data;
+    }
 
-        async function plotScatterPlot() {
-            const data = document.getElementById('dataInput').value;
-            const xColumn = document.getElementById('xSelect').value;
-            const yColumn = document.getElementById('ySelect').value;
-            const errorColumn = document.getElementById('errorSelect').value;
-            const xLabel = document.getElementById('xAxisLabel').value;
-            const yLabel = document.getElementById('yAxisLabel').value;
-            const dataSeriesLabel = document.getElementById('dataSeriesLabel').value;
-            const plotTitle = document.getElementById('plotTitle').value;
+    // Helper function that returns a Python code snippet for fitting a trendline
+    // based on user’s selection in JavaScript.
+    function getTrendlineCode(xColumn, yColumn, trendlineType, polynomialOrder) {
+      // Return Python code as a string that performs the chosen regression
+      // and plots a trendline on the active subplot (`ax`).
+      //
+      // We'll assume x and y are numeric. You may want to handle exceptions
+      // for non-positive X when using log/power, or handle missing data, etc.
+      // This snippet is appended directly inside the Python code block.
 
-            try {
-                // Send the data to Pyodide for processing
-                await pyodide.runPythonAsync(`
+      return `
+import numpy as np
+
+# If user wants a trendline, perform the chosen regression:
+if "${trendlineType}" != "none":
+    # Extract numeric arrays for fitting
+    x_vals = df["${xColumn}"].to_numpy(dtype=float)
+    y_vals = df["${yColumn}"].to_numpy(dtype=float)
+
+    # Sort by x for a cleaner line plot
+    sort_idx = np.argsort(x_vals)
+    x_sorted = x_vals[sort_idx]
+    y_sorted = y_vals[sort_idx]
+
+    if "${trendlineType}" == "linear":
+        # y = a*x + b
+        p = np.polyfit(x_sorted, y_sorted, 1)
+        y_fit = np.polyval(p, x_sorted)
+
+    elif "${trendlineType}" == "polynomial":
+        # y = a_0 + a_1*x + a_2*x^2 + ...
+        order = int("${polynomialOrder}")
+        p = np.polyfit(x_sorted, y_sorted, order)
+        y_fit = np.polyval(p, x_sorted)
+
+    elif "${trendlineType}" == "exponential":
+        # y = a * e^(b*x)
+        # ln(y) = ln(a) + b*x => do linear fit
+        log_y = np.log(y_sorted)
+        p = np.polyfit(x_sorted, log_y, 1)
+        # p[0] = b, p[1] = ln(a)
+        y_fit = np.exp(p[1]) * np.exp(p[0] * x_sorted)
+
+    elif "${trendlineType}" == "logarithmic":
+        # y = a + b * ln(x)
+        # We do linear fit with x' = ln(x)
+        log_x = np.log(x_sorted)
+        p = np.polyfit(log_x, y_sorted, 1)
+        # p[0] = b, p[1] = a
+        y_fit = p[1] + p[0] * log_x
+
+    elif "${trendlineType}" == "power":
+        # y = a * x^b
+        # ln(y) = ln(a) + b * ln(x)
+        log_x = np.log(x_sorted)
+        log_y = np.log(y_sorted)
+        p = np.polyfit(log_x, log_y, 1)
+        # p[0] = b, p[1] = ln(a)
+        y_fit = np.exp(p[1]) * (x_sorted**p[0])
+
+    # Plot the fitted line
+    ax.plot(x_sorted, y_fit, label="Trendline", color="red")
+`;
+    }
+
+    // Function to plot scatter plot
+    async function plotScatterPlot() {
+      const data = document.getElementById('dataInput').value;
+      const xColumn = document.getElementById('xSelect').value;
+      const yColumn = document.getElementById('ySelect').value;
+      const errorColumn = document.getElementById('errorSelect').value;
+      const xLabel = document.getElementById('xAxisLabel').value;
+      const yLabel = document.getElementById('yAxisLabel').value;
+      const dataSeriesLabel = document.getElementById('dataSeriesLabel').value;
+      const plotTitle = document.getElementById('plotTitle').value;
+
+      // Trendline options
+      const addTrendline = document.getElementById('addTrendline').checked;
+      const trendlineType = document.getElementById('trendlineSelect').value;
+      const polynomialOrder = document.getElementById('polynomialOrder').value;
+
+      // Construct Python code for the optional trendline
+      const trendlineCode = addTrendline
+        ? getTrendlineCode(xColumn, yColumn, trendlineType, polynomialOrder)
+        : '';
+
+      try {
+        // Run Python code in Pyodide
+        await pyodide.runPythonAsync(`
 import pandas as pd
 from io import StringIO
 import matplotlib.pyplot as plt
 import base64
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
-csv_data = '''${data}'''
-df = pd.read_csv(StringIO(csv_data), delimiter='\t')
-df = df.groupby('${xColumn}').agg({ '${yColumn}': 'mean', '${errorColumn}': 'mean' }).reset_index()
-x = df['${xColumn}']
-y = df['${yColumn}']
-yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
-# Sort data by x to ensure correct plotting order
-df = df.sort_values('${xColumn}')
-x = df['${xColumn}']
-y = df['${yColumn}']
-yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
+csv_data = """${data}"""
+df = pd.read_csv(StringIO(csv_data), delimiter='\\t')
+
+# Aggregate means for the chosen columns, then reset index
+df = df.groupby("${xColumn}").agg({
+    "${yColumn}": "mean",
+    "${errorColumn}": "mean"
+}).reset_index()
+
+# Sort data by x for correct plotting order
+df = df.sort_values("${xColumn}")
+x = df["${xColumn}"]
+y = df["${yColumn}"]
+yerr = df["${errorColumn}"] if "${errorColumn}" in df.columns else None
+
 fig = Figure(figsize=(10, 6))
 ax = fig.add_subplot(111)
+
 # Plot data with error bars
-ax.errorbar(x, y, yerr=yerr, fmt='o', capsize=5, capthick=2, color='grey', ecolor='black', elinewidth=2, markerfacecolor='black', markersize=10, label='${dataSeriesLabel}')
-# Add a line connecting the data points
-#ax.plot(x, y, color='black', linestyle='-', marker='o')
-ax.set_title('${plotTitle}')
-ax.set_xlabel('${xLabel}')
-ax.set_ylabel('${yLabel}')
+ax.errorbar(
+    x, y, yerr=yerr,
+    fmt='o', capsize=5, capthick=2,
+    color='grey', ecolor='black', elinewidth=2,
+    markerfacecolor='black', markersize=10,
+    label='${dataSeriesLabel}'
+)
+
+ax.set_title("${plotTitle}")
+ax.set_xlabel("${xLabel}")
+ax.set_ylabel("${yLabel}")
 ax.grid(False)
 ax.legend()
+
+# Add trendline code if requested
+${trendlineCode}
+
+ax.legend()
+
 # Save plot to PNG
 canvas = FigureCanvasAgg(fig)
 import io
 buf = io.BytesIO()
 canvas.print_png(buf)
 buf.seek(0)
-img_data = base64.b64encode(buf.getvalue()).decode('utf-8')`);
+img_data = base64.b64encode(buf.getvalue()).decode('utf-8')
+        `);
 
-                // Retrieve and display the plot
-                const imgData = await pyodide.globals.get('img_data');
-                document.getElementById('plotCanvas').innerHTML = `<img src="data:image/png;base64,${imgData}" />`;
-            } catch (error) {
-                console.error('Error in plotScatterPlot:', error);
-                alert('An error occurred while plotting the data. Please check the console for details.');
-            }
-        }
+        // Retrieve and display the plot
+        const imgData = await pyodide.globals.get('img_data');
+        document.getElementById('plotCanvas').innerHTML = `<img src="data:image/png;base64,${imgData}" />`;
+      } catch (error) {
+        console.error('Error in plotScatterPlot:', error);
+        alert('An error occurred while plotting the data. Check the console for details.');
+      }
+    }
 
+    // Function to plot bar plot
+    async function plotBarPlot() {
+      const data = document.getElementById('dataInput').value;
+      const xColumn = document.getElementById('xSelect').value;
+      const yColumn = document.getElementById('ySelect').value;
+      const errorColumn = document.getElementById('errorSelect').value;
+      const xLabel = document.getElementById('xAxisLabel').value;
+      const yLabel = document.getElementById('yAxisLabel').value;
+      const dataSeriesLabel = document.getElementById('dataSeriesLabel').value;
+      const plotTitle = document.getElementById('plotTitle').value;
 
-        async function plotBarPlot() {
-            const data = document.getElementById('dataInput').value;
-            const xColumn = document.getElementById('xSelect').value;
-            const yColumn = document.getElementById('ySelect').value;
-            const errorColumn = document.getElementById('errorSelect').value;
-            const xLabel = document.getElementById('xAxisLabel').value;
-            const yLabel = document.getElementById('yAxisLabel').value;
-            const dataSeriesLabel = document.getElementById('dataSeriesLabel').value;
-            const plotTitle = document.getElementById('plotTitle').value;
+      // Trendline options
+      const addTrendline = document.getElementById('addTrendline').checked;
+      const trendlineType = document.getElementById('trendlineSelect').value;
+      const polynomialOrder = document.getElementById('polynomialOrder').value;
 
-            try {
-                // Send the data to Pyodide for processing
-                await pyodide.runPythonAsync(`
+      // Construct Python code for the optional trendline (on top of bar plot)
+      const trendlineCode = addTrendline
+        ? getTrendlineCode(xColumn, yColumn, trendlineType, polynomialOrder)
+        : '';
+
+      try {
+        // Run Python code in Pyodide
+        await pyodide.runPythonAsync(`
 import pandas as pd
 from io import StringIO
 import matplotlib.pyplot as plt
 import base64
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
-csv_data = '''${data}'''
-df = pd.read_csv(StringIO(csv_data), delimiter='\t')
-df = df.groupby('${xColumn}').agg({ '${yColumn}': 'mean', '${errorColumn}': 'mean' }).reset_index()
-x = df['${xColumn}']
-y = df['${yColumn}']
-yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
-# Sort data by x to ensure correct plotting order
-df = df.sort_values('${xColumn}')
-x = df['${xColumn}'].astype(str)
-y = df['${yColumn}']
-yerr = df['${errorColumn}'] if '${errorColumn}' in df.columns else None
+import numpy as np
+
+csv_data = """${data}"""
+df = pd.read_csv(StringIO(csv_data), delimiter='\\t')
+
+df = df.groupby("${xColumn}").agg({
+    "${yColumn}": "mean",
+    "${errorColumn}": "mean"
+}).reset_index()
+
+# Sort data by x
+df = df.sort_values("${xColumn}")
+x = df["${xColumn}"].astype(str)
+y = df["${yColumn}"]
+yerr = df["${errorColumn}"] if "${errorColumn}" in df.columns else None
+
 fig = Figure(figsize=(10, 6))
 ax = fig.add_subplot(111)
-# Plot data with error bars
+
 bar_positions = range(len(x))
-ax.bar(x, y, yerr=yerr,capsize=10, color='gray', alpha=0.5, error_kw={'elinewidth': 2, 'capsize':5,'capthick':2}, label='${dataSeriesLabel}')
+ax.bar(
+    x, y, yerr=yerr,
+    capsize=10, color='gray', alpha=0.5,
+    error_kw={'elinewidth': 2, 'capsize':5,'capthick':2},
+    label='${dataSeriesLabel}'
+)
+
 ax.set_xticks(bar_positions)
 ax.set_xticklabels(x)
-ax.set_title('${plotTitle}')
-ax.set_xlabel('${xLabel}')
-ax.set_ylabel('${yLabel}')
+ax.set_title("${plotTitle}")
+ax.set_xlabel("${xLabel}")
+ax.set_ylabel("${yLabel}")
 ax.grid(False)
 ax.legend()
 ax.tick_params(axis='x', rotation=0)
 fig.tight_layout()
+
+# -- Add the trendline. Here we re-merge x and y as numeric for fitting. --
+# We'll re-use the original numeric column from the group-by (not the string version).
+# A quick approach: we can do it from df again, but let's be consistent with the group order.
+
+${trendlineCode}
+
+ax.legend()
+
 # Save plot to PNG
 canvas = FigureCanvasAgg(fig)
 import io
 buf = io.BytesIO()
 canvas.print_png(buf)
 buf.seek(0)
-img_data = base64.b64encode(buf.getvalue()).decode('utf-8')`);
+img_data = base64.b64encode(buf.getvalue()).decode('utf-8')
+        `);
 
-                // Retrieve and display the plot
-                const imgData = await pyodide.globals.get('img_data');
-                document.getElementById('plotCanvas').innerHTML = `<img src="data:image/png;base64,${imgData}" />`;
-            } catch (error) {
-                console.error('Error in plotScatterPlot:', error);
-                alert('An error occurred while plotting the data. Please check the console for details.');
-            }
-        }
-    </script>
-    </script>
+        // Retrieve and display the plot
+        const imgData = await pyodide.globals.get('img_data');
+        document.getElementById('plotCanvas').innerHTML = `<img src="data:image/png;base64,${imgData}" />`;
+      } catch (error) {
+        console.error('Error in plotBarPlot:', error);
+        alert('An error occurred while plotting the data. Check the console for details.');
+      }
+    }
+  </script>
 </body>
 </html>
