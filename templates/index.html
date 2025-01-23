@@ -271,7 +271,12 @@
 
     function processData() {
     const data = document.getElementById('excelData').value;
-    const rows = data.split('\n').map(row => row.split('\t'));
+    // const rows = data.split('\n').map(row => row.split('\t'));
+    const rows = data.split('\n').filter(row => row.trim() !== '').map(row => row.split('\t'));
+    if (rows.length === 0) {
+        alert('No data found');
+        return;
+    }
 
     // Assuming first row contains headers
     const headers = rows.shift();
