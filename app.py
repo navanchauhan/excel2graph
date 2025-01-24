@@ -29,7 +29,7 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
               title = "Plot", x_label = "X Axis", y_label = "Y Axis",
               plot_background_color="#ffffff", constant_line=[],
               enable_trendline=True, enable_grid=False,
-              trendline_color="#000000", x_axis_scale="linear", y_axis_scale="linear", trendline_equation=None, chart_type="default"):
+              trendline_color="#000000", x_axis_scale="linear", y_axis_scale="linear", trendline_equation=None, chart_type="default", trendline_type="linear", polynomial_order=2):
     fig, ax = plt.subplots(dpi=300)
 
     plots = []
@@ -77,9 +77,36 @@ def plot_data(x_data, y_data, std_dev_data, color_picker, labels, df,
         else:
             x = df[x_data[0]].astype(float)
             y = df[y_data[0]].astype(float)
-            z = np.polyfit(x, y, 2)
-            p = np.poly1d(z)
-            h, = ax.plot(x,p(x), linestyle="dashed", label="Trendline", color=trendline_color)
+            # z = np.polyfit(x, y, 2)
+            # p = np.poly1d(z)
+            #
+            z = None
+            if trendline_type == 'linear':
+                z = np.polyfit(x, y, 1)
+            elif trendline_type == 'polynomial':
+                z = np.polyfit(x, y, polynomial_order)
+            elif trendline_type == 'exponential':
+                z = np.polyfit(x, np.log(y), 1)
+                p = lambda x: np.exp(z[1]) * np.exp(z[0] * x)
+            elif trendline_type == 'logarithmic':
+                z = np.polyfit(np.log(x), y, 1)
+                p = lambda x: z[1] + z[0] * np.log(x)
+            elif trendline_type == 'power':
+                z = np.polyfit(np.log(x), np.log(y), 1)
+                p = lambda x: np.exp(z[1]) * x ** z[0]
+            else:
+                print("Should not have happened")
+                print("Trendline type: ", trendline_type)
+                z = np.polyfit(x, y, 1)
+                p = np.poly1d(z)
+
+            x_range = np.linspace(x.min(), x.max(), 100)
+            if trendline_type in ['exponential', 'logarithmic', 'power']:
+                y_range = p(x_range)
+            else:
+                y_range = np.poly1d(z)(x_range)
+
+            h, = ax.plot(x_range, y_range, linestyle="dashed", label="Trendline", color=trendline_color)
             handles.append(h)
 
     light_grey = 0.9
@@ -144,7 +171,7 @@ def patent():
 # POST for process_data
 @app.route('/process_data', methods=['POST'])
 def process_data():
-    print(request.form)
+    print("Request form",request.form)
 
     textarea = request.form['excelData']
     df = create_df_from_textarea(textarea)
@@ -239,6 +266,12 @@ def process_data():
     x_axis_scale = request.form.get('xAxisScale', 'linear')
     y_axis_scale = request.form.get('yAxisScale', 'linear')
 
+    trendline_type = request.form.get('trendlineSelect', 'none')
+    polynomial_order = int(request.form.get('polynomialOrder', '2'))
+    if polynomial_order > 6:
+        polynomial_order = 6
+
+
     calc_trendline = request.form.get('calcTrendline', 'off')
     if calc_trendline == 'on':
         enable_trendline = True
@@ -259,7 +292,7 @@ def process_data():
                     trendline_color=color_picker_trendline,
                     x_axis_scale=x_axis_scale,
                     y_axis_scale=y_axis_scale,
-                    trendline_equation=trendline_equation, chart_type=chart_type)
+                    trendline_equation=trendline_equation, chart_type=chart_type, trendline_type=trendline_type, polynomial_order=polynomial_order)
 
     # Return plot as image
     from io import BytesIO

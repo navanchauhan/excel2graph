@@ -194,7 +194,29 @@
     </div>
 
     <div class="row mb-3">
-        <label for="trendlineEquation" class="form-label">Trendline Equation (Leave blank if you want it to be auto-calculated)</label>
+        <div class="col-md-3">
+          <div class="mb-3">
+            <label for="trendlineSelect" class="form-label">Trendline Type:</label>
+            <select name="trendlineSelect" id="trendlineSelect" class="form-select">
+              <option value="none" selected>None</option>
+              <option value="linear">Linear</option>
+              <option value="exponential">Exponential</option>
+              <option value="logarithmic">Logarithmic</option>
+              <option value="polynomial">Polynomial</option>
+              <option value="power">Power</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="mb-3" id="polynomialOrderContainer" style="display: none;">
+            <label for="polynomialOrder" class="form-label">Polynomial Order:</label>
+            <input type="number" id="polynomialOrder" name="polynomialOrder" class="form-control" value="2" min="1"/>
+          </div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label for="trendlineEquation" class="form-label">Trendline Equation Override (Leave blank if you want it to be auto-calculated)</label>
         <input type="text" name="trendlineEquation" id="trendlineEquation" class="form-control" placeholder="">
     </div>
 
@@ -242,6 +264,18 @@
     // add change handler for textarea and execute processData function
     //document.getElementById('excelData').addEventListener('change', processData);
 
+    window.onload = async() => {
+      document.getElementById('trendlineSelect').addEventListener('change', function () {
+        const trendlineType = this.value;
+        const orderContainer = document.getElementById('polynomialOrderContainer');
+        if (trendlineType === 'polynomial') {
+          orderContainer.style.display = 'block';
+        } else {
+          orderContainer.style.display = 'none';
+        }
+      });
+    }
+
 
     function prepareSubmission() {
     const data = document.getElementById('excelData').value;
@@ -271,8 +305,8 @@
 
     function processData() {
     const data = document.getElementById('excelData').value;
-    // const rows = data.split('\n').map(row => row.split('\t'));
-    const rows = data.split('\n').filter(row => row.trim() !== '').map(row => row.split('\t'));
+    const rows = data.split('\n').map(row => row.split('\t'));
+    // const rows = data.split('\n').filter(row => row.trim() !== '').map(row => row.split('\t'));
     if (rows.length === 0) {
         alert('No data found');
         return;
